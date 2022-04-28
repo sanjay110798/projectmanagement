@@ -1,0 +1,174 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\File;
+use App\Model\Role;
+use App\Model\Group;
+use App\Model\GroupRelation;
+use App\User;
+use App\Model\PostRelation;
+class GroupController extends Controller
+{
+   public function __construct()
+    {
+        
+        $this->middleware('auth');
+    }
+    public function index()
+    {
+		/* $gr = GroupRelation::select('group_id')->where('employee_id',Auth::user()->id)->groupBy('group_id')->get();
+		foreach($gr as $k=>$v){
+			$group = Group::where('id',$v->group_id)->first();
+			$gr[$k]->share_type = $group->share_type;
+			$gr[$k]->group_name = $group->group_name;
+			$gr[$k]->created_id = $group->created_by;
+			$ud = User::select('name')->where('id',$group->created_by)->first();
+			$gr[$k]->created_by = $ud->name;
+			$grl = GroupRelation::select('id','accepted')->where(['group_id'=>$v->group_id,'employee_id'=>Auth::user()->id])->first();
+			$gr[$k]->accepted = $grl->accepted;
+			$gr[$k]->id = $grl->id;
+		} */
+		if(Auth::user()->role_id=='7')
+      {
+      $gr = Group::where(['is_delete'=>0])->orderBy('id','desc')->get();
+      }else{
+		$gr = Group::where(['is_delete'=>0])->orderBy('id','desc')->get();
+	   }
+		return view('admin.groupmanagement',compact('gr'));
+    }
+
+    public function add()
+    {
+    	$empl=User::where('role_id','!=',1)->where(['is_delete'=>0])->get();
+		return view('admin.addgroupmanagement',compact('empl'));
+    }
+    public function insert(Request $request)
+    {
+		$group=Group::create([
+			/* 'share_type'=>$request->share_type, */
+			'group_name'=>$request->name,
+			'created_by'=>Auth::user()->id
+		]);
+		$group->save();
+		GroupRelation::create([
+			'group_id'=>$group->id,
+			'employee_id'=>Auth::id(),
+			'accepted'=>1,
+			'position'=>'Admin',
+			'created_at'=>date('Y-m-d H:i:s'),
+			'updated_at'=>date('Y-m-d H:i:s'),
+		]);
+
+		 $empl=$request->employee;
+		 $appservice = app()->make('Appservice');
+			
+       foreach ($empl as $key => $value) {
+		 $proRel=GroupRelation::create([
+			'group_id'=>$group->id,
+			'employee_id'=>$value,
+			'accepted'=>1,
+			'position'=>'Member',
+			'created_at'=>date('Y-m-d H:i:s'),
+			'updated_at'=>date('Y-m-d H:i:s'),
+		]);
+		$proRel->save(); 
+
+		$appservice->create_notification(Auth::id(),'You are added in- '.$request->name.'- Group',$group->id,'Group',$value);
+	  }  
+		return redirect()->route('group.management')->with('msg','Group Created Successfully');
+    }
+    public function edit($id)
+    {
+		$group=Group::where(['id'=>$id])->first();
+		$projectrel=GroupRelation::where(['group_id'=>$id])->get();
+		$empl=User::where('role_id','!=',1)->where(['is_delete'=>0])->get();
+		return view('admin.editgroupmanagement',compact('group','empl','projectrel'));
+    }
+    public function update(Request $request,$id)
+    {
+		$group=Group::where(['id'=>$id])->first();
+		$group->update([
+			/* 'share_type'=>$request->share_type, */
+			'group_name'=>$request->name, 
+		]);
+		$empl=$request->employee;
+		$appservice = app()->make('Appservice');
+		if($request->employee!=''){
+       foreach ($empl as $key => $value) {
+		 $proRel=GroupRelation::create([
+			'group_id'=>$group->id,
+			'employee_id'=>$value,
+			'accepted'=>1,
+			'position'=>'Member',
+			'created_at'=>date('Y-m-d H:i:s'),
+			'updated_at'=>date('Y-m-d H:i:s'),
+		]);
+		$proRel->save();
+
+      $appservice->create_notification(Auth::id(),'You are added in- '.$request->name.'- Group',$group->id,'Group',$value); 
+	  } 
+	}
+		return redirect()->route('group.management')->with('msg','Group Updated Successfully');
+    }
+    public function delete(Request $request,$id)
+    {
+		$PostRelationdata = PostRelation::where('group_id',$id)->count();
+		$GroupRelationdata = GroupRelation::where('group_id',$id)->count();
+		if($PostRelationdata > 0 || $GroupRelationdata > 0){
+			
+			 if($request->candel=='Y')
+          {
+          	$PostRelationdata = PostRelation::where('group_id',$id)->update(['is_delete'=>1]);
+		      $GroupRelationdata = GroupRelation::where('group_id',$id)->update(['is_delete'=>1]);
+          	Group::where(['id' => $id])->update(['is_delete'=>1]);
+          	echo "1";
+          	exit;
+          }
+          echo "0";
+		} else {
+			Group::where(['id' => $id])->update(['is_delete'=>1]);
+			echo "1";
+		}
+    }
+    public function grpReldelete($id)
+    {
+		GroupRelation::where(['id' => $id])->delete();
+		return redirect()->back()->with('msg','Group Deleted Successfully');
+    }
+    public function grpRelaccept($id)
+    {
+		GroupRelation::where(['id' => $id])->update(['accepted'=>1]);
+		return redirect()->back()->with('msg','Group Accepted Successfully');
+    }
+    public function add_emp($id)
+    {
+		$empl = User::select('id','name')->where('id','!=',1)->get();
+		$emp1 = GroupRelation::select('employee_id')->where(['group_id'=>$id])->get();
+		$emp = $empid = array();
+		foreach($emp1 as $k=>$v){
+			$ud = User::select('name')->where('id',$v->employee_id)->first();
+			$emp[] = array('id'=>$v->employee_id,'name'=>$ud->name);
+			$empid[] = $v->employee_id;
+		}
+		$grp = Group::select('id','group_name','share_type')->where(['id'=>$id])->first();
+		return view('admin.addempgroupmanagement',compact('emp','grp','empl','empid'));
+    }
+	public function update_emp($id, Request $request)
+    {
+		$empl=$request->employee;
+		foreach ($empl as $key => $value) {
+			$proRel=GroupRelation::create([
+				'group_id'=>$id,
+				'employee_id'=>$value,
+				'accepted'=>0
+			]);
+			$proRel->save();
+		}
+		return redirect()->route('group.management')->with('msg','Group Updated Successfully');
+    }
+}

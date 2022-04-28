@@ -1,0 +1,392 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\DB;
+use App\User;
+use App\Model\Generalsetting;
+use App\Model\Generalsocial;
+use App\Model\SocialManagement;
+use App\Model\PostRelation;
+use App\Model\Comment;
+use App\Model\Reply;
+use App\Model\Project;
+use App\Model\ProjectRelation;
+use App\Model\Group;
+use App\Model\GroupRelation;
+use App\Model\Like_Dislike;
+
+class FrontController extends Controller
+{
+    /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    /**
+     * Show the application dashboard.
+     *
+     * @return \Illuminate\Contracts\Support\Renderable
+     */
+    public function like_dislike(Request $request){
+		$currentTime = date( 'Y-m-d H:i:s');
+		$flg = 0;
+		$check = Like_Dislike::where(['user_id'=>Auth::user()->id, 'post_id'=>$request->id, 'tbl_name'=>$request->table])->first();
+		if($check){
+			if($check->status != $request->status){
+				Like_Dislike::where('id',$check->id)->update(['status'=>$request->status,'updated_at'=>$currentTime]);
+				$flg = 1;
+			}
+		} else {
+			Like_Dislike::insert(['user_id'=>Auth::user()->id, 'post_id'=>$request->id, 'tbl_name'=>$request->table,'status'=>$request->status,'created_at'=>$currentTime,'updated_at'=>$currentTime]);
+			$flg = 1;
+		}
+		return $flg;
+	}
+    public function index($id="")
+    {
+		$grp = $social = array();
+		/* DB::enableQueryLog(); */
+        $task = SocialManagement::where(['is_delete'=>0])->where('level','>=', Auth::user()->level)->orderBy('id','desc');
+		if($id != ''){
+			$task = $task->where('project_id',$id);
+		}
+		$task = $task->where(function($q) {
+						  $q->where('user_id',Auth::user()->id)
+							->orWhere('post_for',Auth::user()->id);
+					  })->get();
+		/* dd(DB::getQueryLog()); */
+		foreach($task as $k=>$v){
+			$project_details = Project::where('id',$v->project_id)->first();
+			$task[$k]->project_details = $project_details;
+			$user_details = User::where('id',$v->user_id)->first();
+			$task[$k]->user_details = $user_details;
+			$postfor_details = User::where('id',$v->post_for)->first();
+			$task[$k]->postfor_details = $postfor_details;
+		}
+		$post_data = PostRelation::where(['is_delete'=>0])->where('level','>=', Auth::user()->level)->orderBy('id','desc')->get();
+		foreach($post_data as $k=>$v){
+			$group_details = Group::where('id',$v->group_id)->first();
+			$post_data[$k]->group_details = $group_details;
+			$user_details = User::where('id',$v->user_id)->first();
+			$post_data[$k]->user_details = $user_details;
+		}
+		/* echo '<pre>';
+		print_r($task); die; */
+		/* $grp = DB::table('group_table')
+				->join('group_relation_table','group_table.id','=','group_relation_table.group_id')
+				->select('group_relation_table.employee_id')
+				->where('group_table.share_type','Wall_Common')
+				->where('group_relation_table.accepted',1)
+				->get();
+		foreach($grp as $k=>$v){
+			if($v->employee_id == Auth::user()->id){
+				unset($grp[$k]);
+				continue;
+			}
+			$ud = User::select('name')->where('id',$v->employee_id)->first();
+			$grp[$k]->name = $ud->name;
+		} */
+		$project = Project::select('project_table.id','project_table.project_name')->join('project_relation_table','project_relation_table.project_id','=','project_table.id')
+							->where('project_relation_table.employee_id',Auth::user()->id)->where('project_relation_table.is_delete',0)->orderBy('id','desc')->get();
+        return view('front.home',compact('task','grp','project','social','post_data'));
+    }
+    public function myNewsFeed(Request $request)
+    {
+        /* $social=SocialManagement::where(['user_id'=>Auth::id()])->orderBy('id','desc')->get(); */
+		$social = SocialManagement::where(['user_id'=>Auth::user()->id])
+				->orWhere(function ($query) use($request){
+					 $query->where('post_for', '=', 'all')
+							 ->orWhere('post_for', '=', Auth::user()->id);
+					})->orderBy('id','desc')->get();
+		$grp = DB::table('group_table')
+				->join('group_relation_table','group_table.id','=','group_relation_table.group_id')
+				->select('group_relation_table.employee_id')
+				->where('group_relation_table.accepted',1)
+				->get();
+		foreach($grp as $k=>$v){
+			if($v->employee_id == Auth::user()->id){
+				unset($grp[$k]);
+				continue;
+			}
+			$ud = User::select('name')->where('id',$v->employee_id)->first();
+			$grp[$k]->name = $ud->name;
+		}
+        return view('front.mynewsfeed',compact('social','grp'));
+    }
+    public function projectTimeline(Request $request)
+    {
+      $social=SocialManagement::where(['share_type'=>'Wall_Project'])->orderBy('id','desc')->get();
+        return view('front.projecttimeline',compact('social'));
+    }
+    public function groupTimeline(Request $request)
+    {
+      $social=SocialManagement::where(['share_type'=>'Wall_Group'])->orderBy('id','desc')->get();
+        return view('front.grouptimeline',compact('social'));
+    }
+    public function employeeTimeline(Request $request)
+    {
+      $social=[];
+      $social_rel=PostRelation::where(['post_type'=>'Wall_Employee','resource_id'=>Auth::id()])->orderBy('id','desc')->get();
+      foreach ($social_rel as $key => $value) {
+       $social[]=SocialManagement::where(['id'=>$value->post_id])->first();
+      }
+        return view('front.employeetimeline',compact('social'));
+    }
+    public function profile()
+    {
+        return view('front.profile');
+    }
+    public function profileUpdate(Request $request)
+    {
+      $updt = User::where(['id' => Auth::id()])->firstOrFail();
+      $updt->update([
+        'name'=>$request->name,
+        'email'=>$request->email,
+      ]);
+      if ($request->hasFile('image')) {
+      $image = $request->file('image');
+      $img = time().'.'.$image->getClientOriginalExtension();
+      $destinationPath = public_path('/upload/profile/');
+      $image->move($destinationPath, $img);
+      }else{
+      $img=$updt->image;
+      }
+      $updt->image=$img;
+      $updt->save();
+      return redirect()->route('user.profile')->with('success','Profile Updated Successfully');
+    }
+    public function create_task(Request $request)
+    {
+		/* echo '<pre>';
+		print_r($request->all()); */
+		date_default_timezone_set('Asia/Kolkata');
+		$currentTime = date( 'Y-m-d H:i:s');
+		$file_upload = array();
+		if ($request->hasFile('file_upload')) {
+			$image = $request->file('file_upload');
+			foreach($image as $v){
+				$img = time().'_'.$v->getClientOriginalName();
+				$destinationPath = public_path('/upload/post/');
+				$v->move($destinationPath, $img);
+				$file_upload[] = $img;
+			}
+		}
+		/* echo '<pre>';
+		print_r($file_upload); die; */
+		$post=SocialManagement::create([
+			'user_id'=>Auth::id(),
+			/* 'title'=>$request->title, */
+			'project_id'=>$request->project,
+			'priority'=>($request->priority) ? $request->priority : 'off',
+			'image'=>implode(',',$file_upload),
+			/* 'post_type'=>$request->post_type,
+			'share_type'=>$request->share_type, */
+			'description'=>$request->texts,
+			'post_for'=>$request->post_for,
+			'level'=>$request->level,
+			'due_date'=>$request->due_date,
+			'created_at'=>$currentTime,
+			'updated_at'=>$currentTime
+		]);
+		$post->save();
+		/* if($request->share_type=='Wall_Project')
+		{
+			$pro=$request->project;
+			foreach ($pro as $value) {
+				$rel=PostRelation::create([
+					'post_type'=>$request->share_type,
+					'resource_id'=>$value,
+					'post_id'=>$post->id,
+				]);
+				$rel->save();
+			}
+		}
+		if($request->share_type=='Wall_Group')
+		{
+			if($request->group!=''){
+				$pro=$request->group;
+				foreach ($pro as $value) {
+					$rel=PostRelation::create([
+						'post_type'=>$request->share_type,
+						'resource_id'=>$value,
+						'post_id'=>$post->id,
+					]);
+					$rel->save();
+				}
+			}
+		}
+		if($request->share_type=='Wall_Employee')
+		{
+			if($request->employee!=''){
+				$pro=$request->employee;
+				foreach ($pro as $value) {
+					$rel=PostRelation::create([
+						'post_type'=>$request->share_type,
+						'resource_id'=>$value,
+						'post_id'=>$post->id,
+					]);
+					$rel->save();
+				}
+			}
+		}
+		if($request->share_type=='Wall_Notification')
+		{
+			if($request->notification!=''){
+				$pro=$request->notification;
+				foreach ($pro as $value) {
+					$rel=PostRelation::create([
+						'post_type'=>$request->share_type,
+						'resource_id'=>$value,
+						'post_id'=>$post->id,
+					]);
+					$rel->save();
+				}
+			}
+		} */
+		return back()->with('success','Task Uploaded Successfully');
+    }
+    public function makePost(Request $request)
+    {
+      return view('front.makepost');
+    }
+    public function postComment(Request $request)
+    {
+		$sender_id = Auth::id();
+		$social_id = $request->post_id;
+		$comm = Comment::create([
+			'social_id' => $social_id,
+			'sender_id' => $sender_id,
+			'comment' => $request->comment,
+			'created_at' => date('Y-m-d H:i:s'),
+			'updated_at' => date('Y-m-d H:i:s'),
+		]);
+		$comm->save();
+		return redirect()->back()->with('success','Comment Uploaded Successfully');
+    }
+	public function postUpdate(Request $request)
+    {
+		date_default_timezone_set('Asia/Kolkata');
+		$currentTime = date( 'Y-m-d H:i:s');
+		$file_upload = array();
+		if ($request->hasFile('file_upload')) {
+			$image = $request->file('file_upload');
+			foreach($image as $v){
+				$img = time().'_'.$v->getClientOriginalName();
+				$destinationPath = public_path('/upload/task/');
+				$v->move($destinationPath, $img);
+				$file_upload[] = $img;
+			}
+		}
+		$sender_id = Auth::id();
+		$comm = PostRelation::create([
+				'user_id'=>Auth::id(),
+				'group_id'=>$request->group,
+				'image'=>implode(',',$file_upload),
+				'description'=>$request->texts2,
+				'level'=>$request->level,
+				'created_at'=>$currentTime,
+				'updated_at'=>$currentTime
+		]);
+		$comm->save();
+		$appservice = app()->make('Appservice');
+		$appservice->create_notification(Auth::id(),substr($request->texts, 0, 15));
+		return back()->with('success','Post Uploaded Successfully.');
+    }
+    public function giveReply($id)
+    {
+      $comm=Comment::where(['id'=>$id])->first();
+      $reply=Reply::where(['comment_id'=>$id])->get();
+      return view('front.givereply',compact('reply','comm'));
+    }
+    public function postReply(Request $request)
+    {
+		$upload_file = null;
+		if ($request->hasFile('upload_file')) {
+			$image = $request->file('upload_file');
+			$upload_file = time().'.'.$image->getClientOriginalExtension();
+			$destinationPath = public_path('/upload/reply_file/');
+			$image->move($destinationPath, $upload_file);
+		}
+		$reply=Reply::create([
+			'comment_id'=>$request->comment_id,
+			'sender_id'=>Auth::id(),
+			'reply'=>$request->reply,
+			'post_id'=>$request->post_id,
+			'upload_file'=>$upload_file
+		]);
+		$reply->save();
+		return redirect()->back()->with('success','Reply Uploaded Successfully');
+    }
+    public function gatWallList(Request $request)
+    {
+		$val=$request->val;
+		if($val=='Wall_Project')
+		{
+			$project=Project::get();
+			$html='<label class="form-group">Project</label><select id="multiple" name="employee[]" class="form-control" multiple>';
+			foreach ($project as $key => $value) {
+				$html.='<option value="'.$value->id.'">'.$value->project_name.'</option>';
+			}
+			$html.='</select><script>$("#multiple").select2({
+					placeholder: "Select",
+					allowClear: true
+					});</script>';
+		}
+		else if($val=='Wall_Employee')
+		{
+			$employee=User::where(['role_id'=>'4'])->get();
+			$html='<label class="form-group">Employee</label><select id="multiple" name="employee[]" class="form-control" multiple>';
+			foreach ($employee as $key => $value) {
+				$html.='<option value="'.$value->id.'">'.$value->name.'</option>';
+			}
+			$html.='</select><script>$("#multiple").select2({
+					placeholder: "Select",
+					allowClear: true
+					});</script>';
+		}
+		else if($val=='Wall_Group')
+		{
+			$group=Group::get();
+			$html='<label class="form-group">Group</label><select id="multiple" name="group[]" class="form-control" multiple>';
+			foreach ($group as $key => $value) {
+				$html.='<option value="'.$value->id.'">'.$value->group_name.'</option>';
+			}
+			$html.='</select><script>$("#multiple").select2({
+					placeholder: "Select",
+					allowClear: true
+					});</script>';
+		}
+		else if($val=='Wall_Notification')
+		{
+			$html=''; 
+		}
+		else if($val=='Wall_Common')
+		{
+			$html='';
+		}
+		echo $html;
+    }
+	public function project_member(Request $request){
+		$data = ProjectRelation::select('employee_id')->where('project_id',$request->val)->get();
+		$select = '<option value="">-- Select --</option>';
+		foreach($data as $k=>$v){
+			if($v->employee_id == Auth::user()->id){
+				continue;
+			}
+			$u = User::select('name')->where('id',$v->employee_id)->first();
+			$select .= '<option value="'.$v->employee_id.'">'. (($u) ? $u->name : '-') .'</option>';
+		}
+		return $select;
+	}
+}

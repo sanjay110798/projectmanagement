@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Cookie</title>
+	<script  src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+</head>
+<body>
+<div>
+	<h5>Cookie Is Not Present</h5>
+	<p id="show" style="display:none;">My Name Is KRATOS</p>
+</div>
+</body>
+<script>
+    $(document).ready(function(){
+      setTimeout(function(){
+      	// alert("hi");
+        if($.cookie('cookieshow')) {
+        	// alert("hi");
+          $("#show").show();
+          
+        }else{
+        	// alert("hiii");
+          $.cookie('cookieshow', true);
+        } 
+
+      },1000);
+
+    });
+</script>
+<script>
+
+
+            function getCookie(cname) {
+                var name = cname ;
+                return name++;
+            }
+           function setcookie(num){
+           	    var number = num + 1;
+                var expDate = new Date(new Date().getTime()+60*60*1000*24).toGMTString()
+                document.cookie = "num="+number;
+           }
+            function checkCookie() {
+                var i = setcookie(0);
+                var currentCookie = getCookie(i);
+                setcookie(currentCookie);
+                alert(currentCookie);
+                if (currentCookie <= 1) {
+                    $("#show").hide();
+                } else {
+                   $("#show").show();
+                }
+            }
+            
+            window.onload = checkCookie;
+</script>
+</html>

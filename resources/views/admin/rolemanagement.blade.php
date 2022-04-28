@@ -1,0 +1,149 @@
+ @extends('layouts.admin.admin_layout')
+
+
+
+@section('body-content')
+
+  <div class="content-wrapper">
+
+    <!-- Content Header (Page header) -->
+
+    <section class="content-header">
+
+      <div class="container-fluid">
+
+        <div class="row mb-2">
+
+          <div class="col-sm-6">
+
+            <h1>Role Management</h1>
+
+          </div>
+
+          <div class="col-sm-6">
+
+            <ol class="breadcrumb float-sm-right">
+
+              <li class="breadcrumb-item"><a href="#">Home</a></li>
+
+              <li class="breadcrumb-item active">Role Management</li>
+
+            </ol>
+
+          </div>
+
+        </div>
+
+      </div><!-- /.container-fluid -->
+
+    </section>
+
+
+
+    <!-- Main content -->
+
+    <section class="content">
+
+      <div class="container-fluid">
+
+        <div class="row">
+
+          <?php if($Appservice->checkAddaccess('role.management')==true){?>
+
+          <div class="col-md-12 text-right mb-3"><a href="{{route('add.role')}}" class="btn btn-primary">Add</a></div>
+
+          <?php } ?>
+
+          <div class="col-12">
+
+            <div class="card">
+
+              
+
+              <!-- /.card-header -->
+
+              <div class="card-body">
+
+                <table id="example2" class="table table-bordered table-hover">
+
+                  <thead>
+
+                  <tr>
+
+                    <th>#</th>
+
+                    <th>Role Name</th>
+
+                    <th>Action</th>
+
+                  </tr>
+
+                  </thead>
+
+                  <tbody>
+
+                  	<?php
+
+                  	$i=1;
+
+                  	foreach($role as $val){?>
+
+                  <tr>
+
+                  	<td>{{$i++}}</td>
+
+                    <td>{{$val->role_name}}</td>
+
+                    
+
+                    <td><?php if($Appservice->checkEditaccess('role.management')==true){?><a href="{{route('edit.role',['id'=>$val->id])}}"><i class="fa fa-pencil-square-o"></i></a>&nbsp;&nbsp;
+                    <?php } ?>
+                  
+
+                    </td>
+
+                  </tr>
+
+                 <?php } ?>
+
+                  </tbody>
+
+                 
+
+                </table>
+
+              </div>
+
+           
+
+              <!-- /.card-body -->
+
+            </div>
+
+            <!-- /.card -->
+
+
+
+        
+
+            <!-- /.card -->
+
+          </div>
+
+          <!-- /.col -->
+
+        </div>
+
+        <!-- /.row -->
+
+      </div>
+
+      <!-- /.container-fluid -->
+
+    </section>
+
+    <!-- /.content -->
+
+  </div>
+
+  @endsection

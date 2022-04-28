@@ -1,0 +1,374 @@
+@extends('layouts.front.front_layout_login')
+
+@section('body-content')
+<style>
+.user_type_sec input[type="file"] {
+	position: absolute;
+	width: 155px;
+	opacity: 0;
+}
+</style>
+<!-- Middle Content -->
+<div class="middle_content">
+<ul id="myTabs" class="nav nav-pills nav-justified tab_btn_sec" role="tablist" data-tabs="tabs">
+		    <?php if($Appservice->checkAddaccess('social.management')==true){?>
+			<li><a href="#Videos" data-toggle="tab" class="active" id="postupdate_click"><img src="{{asset('assets/images/update_icon.png')}}" alt="Update" /><span>Post Update</span></a></li>
+		    <?php } ?>
+		</ul>
+		<div class="tab-content">
+			
+		
+			<!-- Post Update -->
+			<div role="tabpanel" class="tab-pane fade active show" id="Videos">
+				
+				<div class="block_sec" id="postupdate_show" style="display:none;">
+					<form class="create_from" action="{{route('general.post.update')}}" method="post" enctype="multipart/form-data">
+						@csrf
+						<div class="form-group">
+							<label>Create Update for <i class="fa fa-users"></i>
+								<select name="group" class="form-control" style="display: inline-block; width: auto;" required>
+									<option value="">-- Select --</option>
+									@foreach($list as $k=>$v)
+									<option value="{{$v->name}}">{{$v->name}}</option>
+									@endforeach
+								</select>
+							</label>
+							<textarea class="form-control" name="texts2" id="exampleFormControlTextarea1" rows="8" required></textarea>
+							
+							<div class="user_type_sec">
+								<h4 class="update_title">Update type:</h4>
+								<ul>
+									<li>
+										<a class="photo" href="#"><img src="{{asset('assets/images/photo_icon.png')}}" alt="Image"/>Photo</a>
+									</li>
+									<li>
+										<a class="doc" href="#"><img src="{{asset('assets/images/notepad.png')}}" alt="Notepad"/>Doc(s)</a>
+									</li>
+									
+								</ul>
+								<input type="file" name="file_upload[]" multiple>
+							</div>
+							<div class="bottom_sec">
+								<div class="form-group share_droupdown">
+									<label for="leve">Share With</label>
+									<select class="form-control" id="level" name="level" required>
+										<option value="">-- Select --</option>
+										<option value="1">Coordinator</option>
+										<option value="2">Manager</option>
+										<option value="3">Supervisor</option>
+									
+									</select>
+								</div>
+								<div class="btn_group">
+									<button type="submit" class="btn btn-primary update_btn">Update</button>
+									<button type="button" class="btn btn-primary cancle_btn" onclick="this.form.reset();">Cancle</button>
+								</div>
+							</div>
+						</div>
+					</form>
+				</div>
+
+				<!--  Accordion Block -->
+				<div class="accordion block_accordion" id="block_accordion_sec">
+					@foreach($task as $k=>$v)
+					<div class="card block_sec">
+						<div class="card-header" id="TaskHeadingTwo">
+							<h2 class="mb-0">
+								<button class="btn btn-block text-left collapsed" type="button">
+									<div class="user_title">
+										<div class="user_details">
+											<div class="user_photo">
+												@if(empty($v->user_details) && !isset($v->user_details->image))
+												<img src="{{asset('assets/social/images/users/user-1.jpg')}}" alt="user"/>
+												@elseif($v->user_details->image=='')
+												<img src="{{asset('assets/social/images/users/user-1.jpg')}}" alt="user"/>
+												@else
+												<img src="{{asset('upload/profile/'.$v->user_details->image)}}" alt="user"/>
+												@endif
+											</div>
+											<div class="text_content">
+												<h4 class="name"><a href="{{route('user.post.details',['u_id'=>($v->user_details) ? base64_encode($v->user_details->id) : ''])}}">{{($v->user_details) ? $v->user_details->name : ''}}</a> <span style="font-size: 13px;">Shared update for </span> <i class="fa fa-cog" aria-hidden="true"></i><a href="#">{{$v->priority}}</a> &nbsp;&nbsp;<?php if($Appservice->checkEditaccess('social.management')==true){ if($v->user_id==Auth::id() || Auth::user()->role_id=='12' || Auth::user()->role_id=='1'){?><a href="{{route('generalpost.edit',['id'=>$v->id])}}" class="btn btn-sm btn2"><i class="fa fa-pencil" aria-hidden="true"></i></a><?php } }?></h4>
+												<h5 class="project" style="font-size: 13px;"><span>
+													@if($v->level=='2')
+													Manager
+													@elseif($v->level=='1')
+													Coordinator
+													@else
+													Supervisor
+													@endif
+												</span>shared on {{date('d-m-Y',strtotime($v->updated_at))}} @ {{date('h:i a',strtotime($v->updated_at))}}</h5>
+												<br>
+												<span style="font-size: 19px;">{!! $v->description !!}</span>
+											</div>
+										</div>
+										@if($v->image != '')
+										<a class="arrow_btn" data-toggle="collapse" data-target="#Task{{$v->id}}" aria-expanded="false" aria-controls="Task{{$v->id}}" href="javaScript:void(0);">
+											<!-- <img src="{{asset('assets/images/down_arrow3.png')}}" alt="Arrow"/> -->
+											<i class="fa fa-paperclip"></i>
+										</a>
+										@endif
+									</div>
+								</button>
+							</h2>
+						</div>
+						@if($v->image != '')
+						<div id="Task{{$v->id}}" class="collapse" aria-labelledby="TaskHeadingTwo" data-parent="#block_accordion_sec">
+							<div class="card-body">
+								<div class="block_poject">
+									<h4 class="poject">Project attachments</h4>
+									<ul class="project_gallery">
+										@php $file = explode(',',$v->image); @endphp
+										@foreach($file as $key=>$val)
+										@php $ext = substr($val, strrpos($val, '.') + 1); @endphp
+										@if($ext == 'jpg' || $ext == 'JPG' || $ext == 'jpeg' || $ext == 'JPEG' || $ext == 'webp' || $ext == 'png' || $ext == 'PNG')
+										<li class="gallery_photo">
+											<a href="{{asset('upload/task').'/'.$val}}" data-toggle="lightbox" class="lightbox{{$v->id}}" data-id="{{$v->id}}" data-lightbox="models" data-gallery="gallery"><img src="{{asset('upload/task').'/'.$val}}"></a>
+										</li>
+										@else
+										<li class="gallery_photo" style="width: auto;">
+											<a  href="{{asset('upload/task').'/'.$val}}" target="_blank" data-toggle="lightbox" class="lightbox{{$v->id}}"  data-id="{{$v->id}}" data-gallery="gallery"><i class="fas fa-file-alt" style="font-size: 130px;"></i></a>
+										</li>
+										@endif
+										@endforeach
+									</ul>
+								</div>
+							</div>
+						</div>
+						@endif
+						<div class="bottom_sec">
+							<div class="like">
+								<a href="javaScript:void(0);" class="like_dis" data-status="L" data-id="{{$v->id}}" data-table="SocialManagement" >
+									<div class="icon" data-toggle="tooltip" data-placement="top" title="{{$Appservice->userlist('L',$v->id,'SocialManagement')}}" aria-hidden="true"><i class="fa fa-thumbs-up" aria-hidden="true"></i></div> {{$Appservice->total_likedis('L',$v->id,'SocialManagement')}}
+
+								</a>
+								<a href="javaScript:void(0);" class="like_dis" data-status="D" data-id="{{$v->id}}" data-table="SocialManagement">
+									<div class="icon" data-toggle="tooltip" data-placement="top" title="{{$Appservice->userlist('D',$v->id,'SocialManagement')}}" aria-hidden="true"><i class="fa fa-thumbs-down" aria-hidden="true"></i></div> {{$Appservice->total_likedis('D',$v->id,'SocialManagement')}}
+
+								</a>
+							</div>
+							<div class="comment_sec">
+								<a href="#0" class="btn_comment" data-table="SocialManagement" id="{{$v->id}}">
+									{{$Appservice->total_comment($v->id,'SocialManagement')}}<div class="icon" ><i class="fa fa-comment" aria-hidden="true"></i></div>Comment
+								</a>
+							</div>
+							<!-- ///////////// Comment/////////////////-->
+							
+						</div>
+						<div class="com_div" id="show_comment{{$v->id}}" style="display:none;">
+							<div class="align-items-center justify-content-center">
+								<div class="container">
+								
+									<div class="row justify-content-center mb-4">
+										<div class="col-lg-12">
+											<div class="comments" id="append_{{$v->id}}">
+												
+												
+											</div>
+										</div>
+									</div>
+									<div class="row justify-content-center mb-3">
+										<div class="col-lg-12">
+											<div class="comment-form align-items-center">
+												 <form  enctype="multipart/form-data" id="cform_{{$v->id}}">
+												        @csrf
+												<div class="row">
+												   
+													<div class="col-md-9">
+													    
+														<input type="hidden" id="post_{{$v->id}}" name="post" value="{{$v->id}}">
+														<input type="hidden" name="table" value="SocialManagement">
+														<textarea class="form-control" rows="1" placeholder="Start Typing" name="text" id="comm_{{$v->id}}"autofocus></textarea>
+														<input type="file" id="cimg_{{$v->id}}" name="comnt_img" class="" style="opacity:0;">
+													</div>
+													<div class="col-md-3">
+														<a class="cphoto" data-id="{{$v->id}}" href="#0"><img src="{{asset('assets/images/photo_icon.png')}}" alt="Image" style="width: 47px;" /></a>
+														<button type="button " class="btn btn-primary sendcomment" id="{{$v->id}}" data-table="SocialManagement" onclick="sendComments(this);">Send</button>
+													</div>
+													
+												</div>
+												</form>
+											  <div id="err_{{$v->id}}"></div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					@endforeach
+					<!--<form method="post" action="{{route('ajaxuploadimg')}}" enctype="multipart/form-data" id="cform">
+					@csrf
+					<input type="file" id="cimg" name="img" class="" style="opacity:0;">
+					</form>
+					<input type="hidden" id="imgg" value="">-->
+				</div>
+			</div>
+		</div>
+	</div>
+
+
+
+
+@endsection
+@section('js-content')
+<script>
+	$('#postupdate_click').click(function(){
+		setTimeout(function() {
+			 $('textarea[name="texts2"]').focus();
+			}, 100);
+		$('#postupdate_show').toggle();
+	});
+	$('.like_dis').click(function(){
+		var status = $(this).data('status');
+		var id = $(this).data('id');
+		var table = $(this).data('table');
+		$.ajax({
+			url:'{{route("like-dislike")}}',
+			type:'post',
+			data:{'_token':'{{csrf_token()}}', status:status, id:id, table:table},
+			success:function(res){
+				if(res == 1){
+					swal({
+						title: "Success",
+						text: "Update successfull.",
+						icon: "success",
+						button: "Ok",
+					});
+				} else {
+					swal({
+						title: "Error",
+						text: "Update not done.",
+						icon: "error",
+						button: "Ok",
+					});
+				}
+			}
+		});
+	});
+</script>
+@endsection
+<style type="text/css">
+	.avatar {
+position: relative;
+display: inline-block;
+width: 3rem;
+height: 3rem;
+font-size: 1.25rem;
+}
+
+.avatar-img,
+.avatar-initials,
+.avatar-placeholder {
+width: 100%;
+height: 100%;
+border-radius: inherit;
+}
+
+.avatar-img {
+display: block;
+-o-object-fit: cover;
+object-fit: cover;
+}
+
+.avatar-initials {
+position: absolute;
+top: 0;
+left: 0;
+display: -ms-flexbox;
+display: flex;
+-ms-flex-align: center;
+align-items: center;
+-ms-flex-pack: center;
+justify-content: center;
+color: #fff;
+line-height: 0;
+background-color: #a0aec0;
+}
+
+.avatar-placeholder {
+position: absolute;
+top: 0;
+left: 0;
+background: #a0aec0
+url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='%23fff' d='M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z'/%3e%3c/svg%3e")
+no-repeat center/1.75rem;
+}
+
+.avatar-indicator {
+position: absolute;
+right: 0;
+bottom: 0;
+width: 20%;
+height: 20%;
+display: block;
+background-color: #a0aec0;
+border-radius: 50%;
+}
+
+.avatar-group {
+display: -ms-inline-flexbox;
+display: inline-flex;
+}
+
+.avatar-group .avatar + .avatar {
+margin-left: -0.75rem;
+}
+
+.avatar-group .avatar:hover {
+z-index: 1;
+}
+
+.avatar-sm,
+.avatar-group-sm > .avatar {
+width: 2.125rem;
+height: 2.125rem;
+font-size: 1rem;
+}
+
+.avatar-sm .avatar-placeholder,
+.avatar-group-sm > .avatar .avatar-placeholder {
+background-size: 1.25rem;
+}
+
+.avatar-group-sm > .avatar + .avatar {
+margin-left: -0.53125rem;
+}
+
+.avatar-lg,
+.avatar-group-lg > .avatar {
+width: 4rem;
+height: 4rem;
+font-size: 1.5rem;
+}
+
+.avatar-lg .avatar-placeholder,
+.avatar-group-lg > .avatar .avatar-placeholder {
+background-size: 2.25rem;
+}
+
+.avatar-group-lg > .avatar + .avatar {
+margin-left: -1rem;
+}
+
+.avatar-light .avatar-indicator {
+box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.75);
+}
+
+.avatar-group-light > .avatar {
+box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.75);
+}
+
+.avatar-dark .avatar-indicator {
+box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.25);
+}
+
+.avatar-group-dark > .avatar {
+box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.25);
+}
+
+/* Font not working in <textarea> for this version of bs */
+
+textarea {
+font-family: inherit;
+}
+</style>

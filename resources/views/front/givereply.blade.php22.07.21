@@ -1,0 +1,144 @@
+@extends('layouts.front.front_layout')
+
+@section('body-content')
+
+    <div id="page-contents">
+    	<div class="container">
+    		<div class="row">
+
+          <!-- Newsfeed Common Side Bar Left
+          ================================================= -->
+    			<div class="col-md-3 static">
+            <div class="profile-card">
+              <?php if(Auth::user()->image==''){?>
+              <img src="{{asset('assets/social/images/users/user-1.jpg')}}" alt="user" class="profile-photo" />
+              <?php }else{?>
+              <img src="{{asset('upload/profile/'.Auth::user()->image)}}" alt="user" class="profile-photo" />
+              <?php } ?>
+            	<h5><a href="{{route('user.profile')}}" class="text-white">{{Auth::user()->name}}</a></h5>
+            	<a href="#" class="text-white"><i class="ion ion-android-person-add"></i> 1,299 followers</a>
+            </div><!--profile card ends-->
+           @include('layouts.front.navbar')
+         <!--    <div id="chat-block">
+              <div class="title">Chat online</div>
+              <ul class="online-users list-inline">
+                <li><a href="newsfeed-messages.html" title="Linda Lohan"><img src="{{asset('assets/social/images/users/user-2.jpg')}}" alt="user" class="img-responsive profile-photo" /><span class="online-dot"></span></a></li>
+                <li><a href="newsfeed-messages.html" title="Sophia Lee"><img src="{{asset('assets/social/images/users/user-3.jpg')}}" alt="user" class="img-responsive profile-photo" /><span class="online-dot"></span></a></li>
+                <li><a href="newsfeed-messages.html" title="John Doe"><img src="{{asset('assets/social/images/users/user-4.jpg')}}" alt="user" class="img-responsive profile-photo" /><span class="online-dot"></span></a></li>
+                <li><a href="newsfeed-messages.html" title="Alexis Clark"><img src="{{asset('assets/social/images/users/user-5.jpg')}}" alt="user" class="img-responsive profile-photo" /><span class="online-dot"></span></a></li>
+                <li><a href="newsfeed-messages.html" title="James Carter"><img src="{{asset('assets/social/images/users/user-6.jpg')}}" alt="user" class="img-responsive profile-photo" /><span class="online-dot"></span></a></li>
+                <li><a href="newsfeed-messages.html" title="Robert Cook"><img src="{{asset('assets/social/images/users/user-7.jpg')}}" alt="user" class="img-responsive profile-photo" /><span class="online-dot"></span></a></li>
+                <li><a href="newsfeed-messages.html" title="Richard Bell"><img src="{{asset('assets/social/images/users/user-8.jpg')}}" alt="user" class="img-responsive profile-photo" /><span class="online-dot"></span></a></li>
+                <li><a href="newsfeed-messages.html" title="Anna Young"><img src="{{asset('assets/social/images/users/user-9.jpg')}}" alt="user" class="img-responsive profile-photo" /><span class="online-dot"></span></a></li>
+                <li><a href="newsfeed-messages.html" title="Julia Cox"><img src="{{asset('assets/social/images/users/user-10.jpg')}}" alt="user" class="img-responsive profile-photo" /><span class="online-dot"></span></a></li>
+              </ul>
+            </div> --><!--chat block ends-->
+          </div>
+    			<div class="col-md-7">
+
+            <!-- Post Create Box
+            ================================================= -->
+         
+           
+            <div class="post-content">
+             
+            <div class="post-container">
+            <form method="post" action="{{route('give.reply')}}" enctype="multipart/form-data">
+                  @csrf
+                <input type="hidden" name="comment_id" value="{{$comm->id}}">
+                <input type="hidden" name="post_id" value="{{$comm->social_id}}">
+              <div class="row">
+                
+                <div class="col-md-12" style="margin-top: 10px">
+                  <label class="form-group">Comment</label>
+                  
+                </div>
+                <div class="col-md-12" style="margin-top: 10px">
+                 
+                  {!!$comm->comment!!}
+                </div>
+                <div class="col-md-12" style="margin-top: 10px">
+                 <div class="row">
+                   <?php 
+                   foreach ($reply as $key => $value) {
+                  ?>
+                  <div class="col-md-12 text-right">
+                    <?php if($value->sender->image==''){?>
+                      <img src="{{asset('assets/social/images/users/user-11.jpg')}}" alt="user" class="profile-photo-sm" />
+                      <?php }else{?>
+                      <img src="{{asset('upload/profile/'.$value->sender->image)}}" alt="user" class="profile-photo-sm" />
+                      <?php } ?> {!!$value->reply!!}</div>
+                  <?php } ?>
+                 </div>
+                  
+                </div>
+                
+                <div class="col-md-12" style="margin-top: 10px">
+                  <label class="form-group">Reply</label>
+                  <textarea class="form-control" name="reply" placeholder="Enter Reply"></textarea>
+                  <script>
+                    CKEDITOR.replace('reply');
+                  </script>
+                </div>
+                <div class="col-md-12 text-right" style="margin-top: 10px;">
+                  <button type="submit" class="btn btn-primary">Post</button>
+                </div>
+              </div>
+             </form>
+              </div>
+            </div>
+            
+          </div>
+
+          <!-- Newsfeed Common Side Bar Right
+          ================================================= -->
+    			<!-- <div class="col-md-2 static">
+            <div class="suggestions" id="sticky-sidebar">
+              <h4 class="grey">Who to Follow</h4>
+              <div class="follow-user">
+                <img src="{{asset('assets/social/images/users/user-11.jpg')}}" alt="" class="profile-photo-sm pull-left" />
+                <div>
+                  <h5><a href="timeline.html">Diana Amber</a></h5>
+                  <a href="#" class="text-green">Add friend</a>
+                </div>
+              </div>
+              <div class="follow-user">
+                <img src="{{asset('assets/social/images/users/user-12.jpg')}}" alt="" class="profile-photo-sm pull-left" />
+                <div>
+                  <h5><a href="timeline.html">Cris Haris</a></h5>
+                  <a href="#" class="text-green">Add friend</a>
+                </div>
+              </div>
+              <div class="follow-user">
+                <img src="{{asset('assets/social/images/users/user-13.jpg')}}" alt="" class="profile-photo-sm pull-left" />
+                <div>
+                  <h5><a href="timeline.html">Brian Walton</a></h5>
+                  <a href="#" class="text-green">Add friend</a>
+                </div>
+              </div>
+              <div class="follow-user">
+                <img src="{{asset('assets/social/images/users/user-14.jpg')}}" alt="" class="profile-photo-sm pull-left" />
+                <div>
+                  <h5><a href="timeline.html">Olivia Steward</a></h5>
+                  <a href="#" class="text-green">Add friend</a>
+                </div>
+              </div>
+              <div class="follow-user">
+                <img src="{{asset('assets/social/images/users/user-15.jpg')}}" alt="" class="profile-photo-sm pull-left" />
+                <div>
+                  <h5><a href="timeline.html">Sophia Page</a></h5>
+                  <a href="#" class="text-green">Add friend</a>
+                </div>
+              </div>
+            </div>
+          </div> -->
+    		</div>
+    	</div>
+    </div>
+    <style type="text/css">
+    .select2-container--default.select2-container--focus .select2-selection--multiple {
+     border: none!important; 
+    /* outline: 0; */
+    }
+    </style>
+  @endsection

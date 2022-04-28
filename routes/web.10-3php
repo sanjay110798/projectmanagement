@@ -1,0 +1,137 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register web routes for your application. These
+| routes are loaded by the RouteServiceProvider within a group which
+| contains the "web" middleware group. Now create something great!
+|
+*/
+Auth::routes();
+Route::get('/{id?}','FrontController@index')->name('home');
+Route::get('/profile','FrontController@profile')->name('user.profile');
+Route::post('/profile','FrontController@profileUpdate')->name('user.profile');
+Route::post('/update-password','AdminController@profilePassword')->name('user.update.password');
+Route::get('/my-newsfeed','FrontController@myNewsFeed')->name('my.newsfeed');
+Route::post('/create-task','FrontController@create_task')->name('create.task');
+Route::get('/make-post','FrontController@makePost')->name('make.post');
+Route::get('/project-timeline','FrontController@projectTimeline')->name('project.timeline');
+Route::get('/group-timeline','FrontController@groupTimeline')->name('group.timeline');
+Route::get('/employee-timeline','FrontController@employeeTimeline')->name('employee.timeline');
+Route::post('/get-wall-list','FrontController@gatWallList')->name('get.walllist');
+Route::post('/general-post-update','FrontController@GeneralpostUpdate')->name('general.post.update');
+Route::post('/post-update/{id}','FrontController@postUpdate')->name('post.update');
+Route::post('/project-update/{id}','FrontController@projectUpdate')->name('project.update');
+Route::post('/see-comment','FrontController@seeComment')->name('see.comment');
+Route::post('/post-comment','FrontController@postComment')->name('post.comment');
+Route::post('/delete-comment','FrontController@DeleteComment')->name('delete.comment');
+Route::get('/show-post/{tbl}/{id}','FrontController@showPost')->name('show.post');
+Route::get('/delete-reply/{id}','FrontController@DeleteReply')->name('delete.reply');
+Route::get('/give-reply/{id}','FrontController@giveReply')->name('get.reply');
+Route::post('/post-reply','FrontController@postReply')->name('give.reply');
+Route::any('/project-member','FrontController@project_member')->name('get.project.member');
+Route::any('/like-dislike','FrontController@like_dislike')->name('like-dislike');
+Route::get('/group/{id}','FrontController@groupDetails')->name('group.details');
+Route::post('/ajaxuploadimg','FrontController@imguploadpost')->name('ajaxuploadimg');
+Route::get('/project/{id}','FrontController@ProjectDetails')->name('project.view');
+Route::get('/fetch-notification','FrontController@fetchNotification')->name('fetch.notification');
+Route::group(['prefix' => 'admin','middleware' => ['auth']], function() {
+	Route::get('/dashboard', 'AdminController@index')->name('dashboard');
+	Route::get('/profile','AdminController@profile')->name('profile');
+	Route::post('/profile/update','AdminController@profileUpdate')->name('update.profile');
+	Route::post('/update-password','AdminController@profilePassword')->name('update.password');
+
+	// ////////////////General Setting//////////////////////
+	Route::get('/general-setting','AdminController@generalSetting')->name('general.management');
+	Route::get('/general-setting/add','AdminController@generalSettingadd')->name('add.general');
+	Route::post('/general-setting/insert','AdminController@generalSettinginsert')->name('insert.general');
+	Route::post('/general-setting/update','AdminController@generalSettingupdate')->name('update.general');
+	Route::post('/general-social/update','AdminController@generalSocialupdate')->name('update.social');
+	Route::post('/get-general-social/','AdminController@getGeneralSocial')->name('get.social');
+	Route::get('/social-delete/{id}','AdminController@deletesocial')->name('social.delete');
+	///////////////////////////////////////////////////////////////
+
+	////////////Menu Management///////////////////////////////////
+
+	Route::get('/menu-management','MenuController@index')->name('menu.management');
+	Route::get('/menu-management/add','MenuController@add')->name('add.menu');
+	Route::post('/menu-management/add','MenuController@insert')->name('add.menu');
+	Route::get('/menu-management/edit/{id}','MenuController@edit')->name('edit.menu');
+	Route::post('/menu-management/edit/{id}','MenuController@update')->name('edit.menu');
+	Route::get('/menu-management/delete/{id}','MenuController@delete')->name('delete.menu');
+
+	Route::get('/permission-denied','MenuController@denied')->name('permission.denied');
+
+
+	////////////////////////////////////////////////////////////
+
+	////////////Role Management///////////////////////////////////
+
+	Route::get('/role-management','RoleController@index')->name('role.management');
+	Route::get('/role-management/add','RoleController@add')->name('add.role');
+	Route::post('/role-management/add','RoleController@insert')->name('add.role');
+	Route::get('/role-management/edit/{id}','RoleController@edit')->name('edit.role');
+	Route::post('/role-management/edit/{id}','RoleController@update')->name('edit.role');
+	Route::get('/role-management/delete/{id}','RoleController@delete')->name('delete.role');
+
+
+	////////////////////////////////////////////////////////////
+	////////////User Management///////////////////////////////////
+
+	Route::get('/user-management','UserController@index')->name('user.management');
+	Route::get('/user-management/add','UserController@add')->name('add.user');
+	Route::post('/user-management/add','UserController@insert')->name('add.user');
+	Route::get('/user-management/edit/{id}','UserController@edit')->name('edit.user');
+	Route::post('/user-management/edit/{id}','UserController@update')->name('edit.user');
+	Route::get('/user-management/delete/{id}','UserController@delete')->name('delete.user');
+	Route::get('/user-management/status/{id}','UserController@status')->name('user.status');
+    Route::get('/deleted-user-list','UserController@deletedUser')->name('archive.user');
+    Route::get('/restore-user/{id}','UserController@restoreUser')->name('user.restore');
+	////////////////////////////////////////////////////////////
+	////////////Social Management///////////////////////////////////
+
+	Route::get('/social-management','SocialController@index')->name('social.management');
+	Route::get('/social-management/add','SocialController@add')->name('add.social');
+	Route::post('/social-management/add','SocialController@insert')->name('add.social');
+	Route::get('/social-management/edit/{id}','SocialController@edit')->name('edit.social');
+	Route::post('/social-management/edit/{id}','SocialController@update')->name('edit.social');
+	Route::get('/social-management/delete/{id}','SocialController@delete')->name('delete.social');
+
+	//////////////////////////////////////////////////////////
+	Route::get('/updatefor-management','UpdateforController@index')->name('updatefor.management');
+	Route::post('/updatefor-management/add','UpdateforController@insert')->name('add.updatefor');
+	Route::post('/updatefor-management/edit/{id}','UpdateforController@update')->name('edit.updatefor');
+	Route::get('/updatefor-management/delete/{id}','UpdateforController@delete')->name('delete.updatefor');
+	////////////Project Management///////////////////////////////////
+
+	Route::get('/project-management','ProjectController@index')->name('project.management');
+	Route::get('/project-management/add','ProjectController@add')->name('add.project');
+	Route::post('/project-management/add','ProjectController@insert')->name('add.project');
+	Route::get('/project-management/edit/{id}','ProjectController@edit')->name('edit.project');
+	Route::post('/project-management/edit/{id}','ProjectController@update')->name('edit.project');
+	Route::get('/project-management/delete/{id}','ProjectController@delete')->name('delete.project');
+	Route::get('/project-relation/delete/{id}','ProjectController@proReldelete')->name('delete.projectRel');
+    Route::get('/deleted-project-list','ProjectController@deletedProject')->name('archive.project');
+    Route::get('/restore-project/{id}','ProjectController@restoreProject')->name('project.restore');
+
+    Route::get('/change-status','ProjectController@changeStatus')->name('change.project.status');
+	//////////////////////////////////////////////////////////
+	////////////Group Management///////////////////////////////////
+
+	Route::get('/group-management','GroupController@index')->name('group.management');
+	Route::get('/group-management/add','GroupController@add')->name('add.group');
+	Route::post('/group-management/add','GroupController@insert')->name('add.group');
+	Route::get('/group-management/edit/{id}','GroupController@edit')->name('edit.group');
+	Route::post('/group-management/edit/{id}','GroupController@update')->name('edit.group');
+	Route::get('/group-management/delete/{id}','GroupController@delete')->name('delete.group');
+	Route::get('/group-relation/delete/{id}','GroupController@grpReldelete')->name('delete.groupRel');
+	Route::get('/group-relation/accept/{id}','GroupController@grpRelaccept')->name('accept.groupRel');
+	Route::get('/group-management/employee/{id}','GroupController@add_emp')->name('add.emp.group');
+	Route::post('/group-management/employee/{id}','GroupController@update_emp')->name('add.emp.group');
+	////////////////////////////////////////////////////////////
+});
